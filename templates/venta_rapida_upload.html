@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Venta rápida | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Venta rápida</h1>
+      <p class="page-subtitle">
+        Sube un Excel de antigüedad de saldos, selecciona facturas y genera ventas agrupadas por cliente.
+      </p>
+    </div>
+  </header>
+
+  <div class="card">
+    {% if errores and errores|length > 0 %}
+      <div class="alert-error">
+        <ul>
+          {% for e in errores %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if mensaje_ok %}
+      <div class="alert-ok">
+        {{ mensaje_ok }}
+      </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="form-vertical">
+      <input type="hidden" name="step" value="1">
+
+      <div class="form-group">
+        <label class="field-label" for="vendedor_id">Vendedor</label>
+        <select class="field-input" id="vendedor_id" name="vendedor_id" required>
+          <option value="">Selecciona un vendedor</option>
+          {% for v in vendedores %}
+            <option value="{{ v['id'] }}">{{ v['nombre'] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="cuenta_bancaria_id">Cuenta bancaria destino</label>
+        <select class="field-input" id="cuenta_bancaria_id" name="cuenta_bancaria_id" required>
+          <option value="">Selecciona una cuenta</option>
+          {% for c in cuentas %}
+            <option value="{{ c['id'] }}">{{ c['banco'] }} — {{ c['alias'] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="archivo">Archivo de antigüedad de saldos (Excel)</label>
+        <input class="field-input" type="file" id="archivo" name="archivo" required>
+        <p class="hint">Usa el archivo de antigüedad de saldos que ya descargas del sistema (PaymentReportPDF / Aging).</p>
+      </div>
+
+      <button type="submit" class="btn-primary">Cargar y ver facturas</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

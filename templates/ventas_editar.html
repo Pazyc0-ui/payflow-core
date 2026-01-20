@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Editar venta | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Editar venta {{ venta["folio"] }}</h1>
+      <p class="page-subtitle">
+        Solo puedes editar ventas que aún no están pagadas en banco.
+      </p>
+
+      {% if venta["nota"] and "Venta rápida" in venta["nota"] %}
+        <div class="hint" style="margin-top:4px;">
+          <span class="badge badge-venta-rapida">Venta rápida</span>
+          Esta venta proviene de una venta rápida. Si cambias el monto total, asegúrate de mantener coherencia con los documentos que se cobraron.
+        </div>
+      {% endif %}
+    </div>
+    <a href="{{ url_for('ventas_listado') }}" class="btn-secondary small">
+      Volver a mis ventas
+    </a>
+  </header>
+
+  <div class="card">
+    {% if errores and errores|length > 0 %}
+      <div class="alert-error">
+        <ul>
+          {% for e in errores %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if mensaje_ok %}
+      <div class="alert-ok">
+        {{ mensaje_ok }}
+      </div>
+    {% endif %}
+
+    <form method="post" class="form-vertical" style="max-width:420px;">
+      <div class="form-group">
+        <label class="field-label" for="folio">Folio</label>
+        <input
+          class="field-input"
+          type="text"
+          id="folio"
+          name="folio"
+          value="{{ venta['folio'] }}"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="cliente_nombre">Cliente</label>
+        <input
+          class="field-input"
+          type="text"
+          id="cliente_nombre"
+          name="cliente_nombre"
+          value="{{ venta['cliente_nombre'] }}"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="monto">Monto</label>
+        <input
+          class="field-input"
+          type="number"
+          step="0.01"
+          id="monto"
+          name="monto"
+          value="{{ '%.2f'|format(venta['monto']) }}"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="cuenta_bancaria_id">Cuenta bancaria</label>
+        <select class="field-input" id="cuenta_bancaria_id" name="cuenta_bancaria_id" required>
+          <option value="">Selecciona una cuenta</option>
+          {% for c in cuentas %}
+            <option value="{{ c['id'] }}" {% if c['id'] == venta['cuenta_bancaria_id'] %}selected{% endif %}>
+              {{ c['banco'] }} — {{ c['alias'] }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="nota">Nota (opcional)</label>
+        <textarea
+          class="field-input"
+          id="nota"
+          name="nota"
+          rows="4"
+        >{{ venta["nota"] or "" }}</textarea>
+      </div>
+
+      <button type="submit" class="btn-primary">Guardar cambios</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Vendedor | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Panel de mostrador</h1>
+      <p class="page-subtitle">
+        Registra ventas y valida pagos con el cliente frente a ti.
+      </p>
+    </div>
+  </header>
+
+  <div class="cards-grid">
+    <div class="card big-card">
+      <h2>Nueva venta</h2>
+      <p>Genera un nuevo folio para tu cliente y selecciona la cuenta a la que debe transferir.</p>
+      <a href="{{ url_for('ventas_nueva') }}" class="btn-primary">Crear nueva venta</a>
+    </div>
+
+  <div class="card">
+    <h2>Venta rápida</h2>
+    <p>
+      Carga un Excel de antigüedad de saldos, selecciona facturas y genera ventas masivas
+      agrupadas por cliente.
+    </p>
+    <a href="{{ url_for('venta_rapida') }}" class="btn-secondary">Ir a venta rápida</a>
+  </div>
+
+    <div class="card">
+      <h2>Mis ventas</h2>
+      <p>Revisa el estado de tus ventas, si ya se pagaron o siguen pendientes.</p>
+      <a href="{{ url_for('ventas_listado') }}" class="btn-secondary">Ver mis ventas</a>
+    </div>
+
+    <div class="card">
+      <h2>Tip rápido</h2>
+      <p>
+        Cuando el cliente diga <strong>"ya pagué"</strong>, entra a la venta y presiona
+        <em>"El cliente dice que ya pagó"</em>. El sistema buscará el pago en el banco.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

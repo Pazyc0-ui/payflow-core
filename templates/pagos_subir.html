@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Subir movimientos bancarios | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Subir movimientos bancarios</h1>
+      <p class="page-subtitle">
+        Carga archivos de movimientos de BBVA, Banamex o Banorte para detectar pagos entrantes.
+      </p>
+    </div>
+    <a href="{{ url_for('pagos_detectados_listado') }}" class="btn-secondary small">
+      Ver pagos detectados
+    </a>
+  </header>
+
+  <div class="card">
+    {% if errores and errores|length > 0 %}
+      <div class="alert-error">
+        <ul>
+          {% for e in errores %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if mensaje_ok %}
+      <div class="alert-ok">
+        {{ mensaje_ok }}
+      </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="form-vertical">
+      <div class="form-group">
+        <label class="field-label" for="banco">Banco</label>
+        <select class="field-input" id="banco" name="banco" required>
+          <option value="">Selecciona un banco</option>
+          <option value="BBVA">BBVA</option>
+          <option value="BANAMEX">Banamex</option>
+          <option value="BANORTE">Banorte</option>
+        </select>
+        <p class="hint">Elige el banco del archivo que vas a subir.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="archivo">Archivo de movimientos</label>
+        <input class="field-input" type="file" id="archivo" name="archivo" required>
+        <p class="hint">
+          BBVA: Excel (.xls, .xlsx, .xlsb) &nbsp;·&nbsp; Banamex / Banorte: CSV
+        </p>
+      </div>
+
+      <button type="submit" class="btn-primary">Procesar archivo</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

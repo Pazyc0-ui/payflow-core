@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Venta rápida | Previsualización{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Venta rápida</h1>
+      <p class="page-subtitle">
+        Selecciona las facturas y ajusta los montos netos antes de generar las ventas.
+      </p>
+    </div>
+  </header>
+
+  <div class="card">
+    <form method="post" class="form-vertical" id="venta-rapida-form">
+      <input type="hidden" name="step" value="2">
+      <input type="hidden" name="vendedor_id" value="{{ vendedor_id }}">
+      <input type="hidden" name="cuenta_bancaria_id" value="{{ cuenta_bancaria_id }}">
+      <input type="hidden" name="facturas_json" value='{{ facturas|tojson }}'>
+
+      <p class="hint">
+        Las ventas se crearán agrupadas por cliente, sumando el neto de las facturas seleccionadas.
+      </p>
+
+      <!-- Filtros (como pagos detectados, pero para facturas) -->
+      <div class="card" style="margin-bottom: 12px;">
+        <h3 style="margin-top:0;">Filtros de facturas</h3>
+        <div class="cards-grid">
+          <div class="form-group">
+            <label class="field-label" for="filtro_cliente">Cliente</label>
+            <input
+              class="field-input"
+              type="text"
+              id="filtro_cliente"
+              placeholder="Nombre o código de cliente"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="filtro_documento">Documento</label>
+            <input
+              class="field-input"
+              type="text"
+              id="filtro_documento"
+              placeholder="Número de factura / documento"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="filtro_monto_min">Monto mínimo</label>
+            <input
+              class="field-input"
+              type="number"
+              step="0.01"
+              id="filtro_monto_min"
+              placeholder="0.00"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="filtro_monto_max">Monto máximo</label>
+            <input
+              class="field-input"
+              type="number"
+              step="0.01"
+              id="filtro_monto_max"
+              placeholder="0.00"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="field-label">&nbsp;</label>
+            <label class="checkbox-inline">
+              <input type="checkbox" id="filtro_solo_seleccionadas">
+              Solo seleccionadas
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-top: 8px;">
+          <button type="button" class="btn-secondary small" id="btn_limpiar_filtros">
+            Limpiar filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- INDICADOR DINÁMICO -->
+      <div class="card indicador-total" id="indicador_totales" style="margin-bottom: 12px;">
+        <h3 style="margin-top:0;">Resumen de selección</h3>
+        <div class="indicador-grid">
+          <div><strong>Documentos seleccionados:</strong> <span id="ind_docs">0</span></div>
+          <div><strong>Neto original seleccionado:</strong> $<span id="ind_total_original">0.00</span></div>
+          <div><strong>Neto editable seleccionado:</strong> $<span id="ind_total_editado">0.00</span></div>
+        </div>
+
+        <div id="indicador_warning" class="indicador-warning" style="display:none; margin-top:6px;">
+          ⚠ El monto editable supera el monto original.
+        </div>
+      </div>
+
+      <!-- Tabla de facturas -->
+      <table class="table" id="tabla-facturas">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Cliente</th>
+            <th>Documento</th>
+            <th>Neto original</th>
+            <th>Neto editable</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in facturas %}
+          <tr
+            class="factura-row"
+            data-cliente="{{ f.cliente|e }}"
+            data-doc="{{ f.documento|e }}"
+            data-neto="{{ '%.2f'|format(f.neto) }}"
+          >
+            <td>
+              <input type="checkbox" name="seleccion" value="{{ loop.index0 }}">
+            </td>
+            <td>{{ f.cliente }}</td>
+            <td>{{ f.documento }}</td>
+            <td>${{ "%.2f"|format(f.neto) }}</td>
+            <td>
+              <input
+                class="field-input monto-editable"
+                type="number"
+                step="0.01"
+                name="monto_{{ loop.index0 }}"
+                value="{{ "%.2f"|format(f.neto) }}"
+                style="max-width: 120px;"
+              >
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <button type="submit" class="btn-primary" style="margin-top: 12px;">Crear ventas rápidas</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // --- Filtros ---
+  const inputCliente = document.getElementById("filtro_cliente");
+  const inputDocumento = document.getElementById("filtro_documento");
+  const inputMontoMin = document.getElementById("filtro_monto_min");
+  const inputMontoMax = document.getElementById("filtro_monto_max");
+  const chkSoloSeleccionadas = document.getElementById("filtro_solo_seleccionadas");
+  const btnLimpiar = document.getElementById("btn_limpiar_filtros");
+  const filas = Array.from(document.querySelectorAll(".factura-row"));
+
+  function aplicarFiltros() {
+    const filtroCliente = (inputCliente.value || "").toLowerCase();
+    const filtroDoc = (inputDocumento.value || "").toLowerCase();
+    const montoMin = inputMontoMin.value !== "" ? parseFloat(inputMontoMin.value.replace(",", ".")) : null;
+    const montoMax = inputMontoMax.value !== "" ? parseFloat(inputMontoMax.value.replace(",", ".")) : null;
+    const soloSel = chkSoloSeleccionadas.checked;
+
+    filas.forEach(row => {
+      const cliente = (row.dataset.cliente || "").toLowerCase();
+      const doc = (row.dataset.doc || "").toLowerCase();
+      const netoOriginal = parseFloat(row.dataset.neto || "0");
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      const seleccionado = checkbox && checkbox.checked;
+
+      let visible = true;
+
+      if (filtroCliente && !cliente.includes(filtroCliente)) visible = false;
+      if (visible && filtroDoc && !doc.includes(filtroDoc)) visible = false;
+      if (visible && montoMin !== null && !(netoOriginal >= montoMin)) visible = false;
+      if (visible && montoMax !== null && !(netoOriginal <= montoMax)) visible = false;
+      if (visible && soloSel && !seleccionado) visible = false;
+
+      row.style.display = visible ? "" : "none";
+    });
+  }
+
+  inputCliente.addEventListener("input", aplicarFiltros);
+  inputDocumento.addEventListener("input", aplicarFiltros);
+  inputMontoMin.addEventListener("input", aplicarFiltros);
+  inputMontoMax.addEventListener("input", aplicarFiltros);
+  chkSoloSeleccionadas.addEventListener("change", aplicarFiltros);
+
+  filas.forEach(row => {
+    const checkbox = row.querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      checkbox.addEventListener("change", aplicarFiltros);
+    }
+  });
+
+  btnLimpiar.addEventListener("click", function() {
+    inputCliente.value = "";
+    inputDocumento.value = "";
+    inputMontoMin.value = "";
+    inputMontoMax.value = "";
+    chkSoloSeleccionadas.checked = false;
+    aplicarFiltros();
+  });
+
+  // --- Indicador de totales ---
+  const indDocs = document.getElementById("ind_docs");
+  const indTotalOriginal = document.getElementById("ind_total_original");
+  const indTotalEditado = document.getElementById("ind_total_editado");
+  const indicadorWarning = document.getElementById("indicador_warning");
+
+  function calcularTotales() {
+    let totalDocs = 0;
+    let totalOriginal = 0;
+    let totalEditado = 0;
+
+    document.querySelectorAll(".factura-row").forEach(row => {
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      const inputEdit = row.querySelector(".monto-editable");
+
+      if (checkbox && checkbox.checked) {
+        const original = parseFloat(row.dataset.neto || "0");
+        const editado = parseFloat(inputEdit.value || "0");
+
+        totalDocs++;
+        totalOriginal += isNaN(original) ? 0 : original;
+        totalEditado += isNaN(editado) ? 0 : editado;
+      }
+    });
+
+    indDocs.textContent = totalDocs;
+    indTotalOriginal.textContent = totalOriginal.toFixed(2);
+    indTotalEditado.textContent = totalEditado.toFixed(2);
+
+    if (totalEditado > totalOriginal && totalDocs > 0) {
+      indicadorWarning.style.display = "block";
+    } else {
+      indicadorWarning.style.display = "none";
+    }
+  }
+
+  // Vincular totales a checkboxes y montos editables
+  document.querySelectorAll(".factura-row input[type='checkbox']").forEach(chk => {
+    chk.addEventListener("change", calcularTotales);
+  });
+
+  document.querySelectorAll(".monto-editable").forEach(inp => {
+    inp.addEventListener("input", calcularTotales);
+  });
+
+  // Inicializar al entrar
+  aplicarFiltros();
+  calcularTotales();
+});
+</script>
+{% endblock %}

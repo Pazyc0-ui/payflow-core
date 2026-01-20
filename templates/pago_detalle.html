@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de pago | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Detalle de pago</h1>
+      <p class="page-subtitle">Revisa la información del pago y asócialo a una venta si es necesario.</p>
+    </div>
+    <a href="{{ url_for('pagos_detectados_listado') }}" class="btn-secondary small">
+      Volver a pagos detectados
+    </a>
+  </header>
+
+  <div class="card">
+    {% if errores and errores|length > 0 %}
+      <div class="alert-error">
+        <ul>
+          {% for e in errores %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if mensaje_ok %}
+      <div class="alert-ok">
+        {{ mensaje_ok }}
+      </div>
+    {% endif %}
+
+    <h2 style="margin-top:0;">Pago #{{ pago["id"] }}</h2>
+    <p><strong>Banco:</strong> {{ pago["banco"] }}</p>
+    <p><strong>Cuenta:</strong> {{ pago["cuenta_alias"] or 'N/D' }}</p>
+    <p><strong>Fecha operación:</strong> {{ pago["fecha_operacion"] }}</p>
+    <p><strong>Monto:</strong> ${{ "%.2f"|format(pago["monto"]) }}</p>
+    <p><strong>Referencia:</strong> {{ pago["referencia"] }}</p>
+    <p><strong>Referencia ampliada:</strong> {{ pago["referencia_ampliada"] }}</p>
+    <p><strong>Concepto:</strong> {{ pago["concepto"] }}</p>
+    <p><strong>Estado conciliación:</strong>
+      <span class="badge badge-{{ pago["estado_conciliacion"]|lower }}">
+        {{ pago["estado_conciliacion"] }}
+      </span>
+    </p>
+
+        {% if pago["venta_id"] %}
+      <hr>
+      <h3>Venta asociada</h3>
+      <p><strong>Folio:</strong> {{ pago["venta_folio"] }}</p>
+      <p><strong>Cliente:</strong> {{ pago["venta_cliente"] }}</p>
+      <p><strong>Monto venta:</strong> ${{ "%.2f"|format(pago["venta_monto"]) }}</p>
+
+      {% if pago["venta_comprobante"] %}
+        <p>
+          <strong>Comprobante:</strong>
+          <a
+            href="{{ url_for('descargar_comprobante', venta_id=pago['venta_id']) }}"
+            class="link-soft"
+            target="_blank"
+          >
+            Ver / descargar comprobante
+          </a>
+        </p>
+      {% endif %}
+
+      
+      {% if detalle_venta_rapida and detalle_venta_rapida|length > 0 %}
+        <h4 style="margin-top:12px;">Detalle de documentos (venta rápida)</h4>
+        <p class="hint">
+          Documentos incluidos en esta venta y monto aplicado a cada uno.
+        </p>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Documento</th>
+              <th>Neto usado</th>
+              <th>Neto original</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in detalle_venta_rapida %}
+            <tr>
+              <td>{{ d.documento }}</td>
+              <td>${{ "%.2f"|format(d.neto_editado) }}</td>
+              <td>${{ "%.2f"|format(d.neto_original) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    {% else %}
+      <hr>
+      <h3>Asociar a una venta</h3>
+
+      <form method="post" class="form-vertical" style="max-width: 320px; margin-bottom: 16px;">
+        <div class="form-group">
+          <label class="field-label" for="folio">Folio de venta</label>
+          <input class="field-input" type="text" id="folio" name="folio">
+          <p class="hint">Escribe el folio de la venta si ya lo conoces.</p>
+        </div>
+        <button type="submit" class="btn-primary">Asociar por folio</button>
+      </form>
+
+      {% if candidatos_venta and candidatos_venta|length > 0 %}
+        <hr>
+        <h3>Ventas sugeridas</h3>
+        <p class="hint">
+          Basado en monto y cuenta, estas ventas pendientes podrían corresponder a este pago.
+          Haz clic en <strong>Asociar aquí</strong> para ligarlo directamente.
+        </p>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Folio venta</th>
+              <th>Cliente</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th>Fecha creación</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in candidatos_venta %}
+            <tr>
+              <td>{{ v["folio"] }}</td>
+              <td>{{ v["cliente_nombre"] }}</td>
+              <td>${{ "%.2f"|format(v["monto"]) }}</td>
+              <td>
+                <span class="badge badge-{{ v["estado_banco"]|lower }}">
+                  {{ v["estado_banco"] }}
+                </span>
+              </td>
+              <td>{{ v["fecha_creacion"] }}</td>
+              <td>
+                <form method="post" style="margin:0;">
+                  <input type="hidden" name="venta_id_directo" value="{{ v['id'] }}">
+                  <button type="submit" class="btn-secondary small">Asociar aquí</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="hint">
+          No se encontraron ventas pendientes con el mismo monto y cuenta para sugerir automáticamente.
+        </p>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

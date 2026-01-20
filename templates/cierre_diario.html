@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Cierre diario | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Cierre diario</h1>
+      <p class="page-subtitle">
+        Resumen de ventas y pagos para la fecha seleccionada.
+      </p>
+    </div>
+    <a href="{{ url_for('dashboard_admin') }}" class="btn-secondary small">
+      Volver al panel
+    </a>
+  </header>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <form method="get" class="form-vertical" style="max-width: 320px;">
+      <div class="form-group">
+        <label class="field-label" for="fecha">Fecha</label>
+        <input class="field-input" type="date" id="fecha" name="fecha" value="{{ fecha_str }}">
+        <p class="hint">Selecciona el día que quieres revisar.</p>
+      </div>
+      <button type="submit" class="btn-primary small">Actualizar</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <h2>Resumen del día {{ fecha_str }}</h2>
+    <p><strong>Ventas:</strong> {{ total_ventas }} | Monto total: ${{ "%.2f"|format(total_monto_ventas) }}</p>
+    <p><strong>Ventas pagadas:</strong> {{ total_pagadas }}</p>
+    <p><strong>Ventas pendientes:</strong> {{ total_pendientes }}</p>
+    <hr>
+    <p><strong>Pagos en banco:</strong> {{ total_pagos }} | Monto total: ${{ "%.2f"|format(total_monto_pagos) }}</p>
+    <p><strong>Pagos ligados a venta:</strong> {{ total_pagos_con_venta }}</p>
+    <p><strong>Pagos sin venta asociada:</strong> {{ total_pagos_sin_venta }}</p>
+        {% if total_pagos_con_venta > 0 %}
+      <hr>
+      <p class="hint">
+        Puedes exportar el corte de todo lo aplicado (pagos en MATCH) de este día.
+      </p>
+      <a
+        href="{{ url_for('cierre_diario', fecha=fecha_str, export='corte') }}"
+        class="btn-secondary small"
+      >
+        Exportar corte aplicado (CSV)
+      </a>
+    {% endif %}
+
+  </div>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <h3>Ventas pendientes de pago</h3>
+    {% if ventas_pendientes|length == 0 %}
+      <p class="hint">No hay ventas pendientes para este día.</p>
+    {% else %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Folio</th>
+            <th>Cliente</th>
+            <th>Monto</th>
+            <th>Estado banco</th>
+            <th>Creada</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in ventas_pendientes %}
+          <tr>
+            <td>{{ v["folio"] }}</td>
+            <td>{{ v["cliente_nombre"] }}</td>
+            <td>${{ "%.2f"|format(v["monto"]) }}</td>
+            <td>
+              <span class="badge badge-{{ v["estado_banco"]|lower }}">
+                {{ v["estado_banco"] }}
+              </span>
+            </td>
+            <td>{{ v["fecha_creacion"] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <h3>Pagos sin venta asociada</h3>
+    {% if pagos_sin_venta|length == 0 %}
+      <p class="hint">Todos los pagos del día tienen una venta asociada.</p>
+    {% else %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Banco</th>
+            <th>Cuenta</th>
+            <th>Referencia</th>
+            <th>Concepto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in pagos_sin_venta %}
+          <tr>
+            <td>{{ p["fecha_operacion"] }}</td>
+            <td>${{ "%.2f"|format(p["monto"]) }}</td>
+            <td>{{ p["banco"] }}</td>
+            <td>{{ p["cuenta_bancaria_id"] or "-" }}</td>
+            <td>{{ p["referencia"] }}</td>
+            <td>{{ p["concepto"] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Pagos ligados a ventas</h3>
+    {% if pagos_con_venta|length == 0 %}
+      <p class="hint">No hay pagos ligados a ventas para este día.</p>
+    {% else %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Banco</th>
+            <th>Venta (folio)</th>
+            <th>Referencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in pagos_con_venta %}
+          <tr>
+            <td>{{ p["fecha_operacion"] }}</td>
+            <td>${{ "%.2f"|format(p["monto"]) }}</td>
+            <td>{{ p["banco"] }}</td>
+            <td>{{ p["venta_folio"] or '-' }}</td>
+            <td>{{ p["referencia"] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar sesión | AZYCO Pagos{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+<div class="login-card">
+    <h1 class="login-title">AZYCO Pagos</h1>
+    <p class="login-subtitle">Inicia sesión para continuar</p>
+
+    {% if error %}
+    <div class="alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" class="login-form">
+    <label class="field-label" for="email">Correo electrónico</label>
+    <input class="field-input" type="email" id="email" name="email" required>
+
+    <label class="field-label" for="password">Contraseña</label>
+    <input class="field-input" type="password" id="password" name="password" required>
+
+    <button type="submit" class="btn-primary">Entrar</button>
+    </form>
+</div>
+</div>
+{% endblock %}

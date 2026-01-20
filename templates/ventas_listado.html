@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Mis ventas | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Mis ventas</h1>
+      <p class="page-subtitle">Registro de ventas a conciliar con banco</p>
+    </div>
+    <a href="{{ url_for('ventas_nueva') }}" class="btn-primary small">Nueva venta</a>
+  </header>
+
+  {% if ventas|length == 0 %}
+    <div class="empty-state">
+      <p>Aún no has registrado ventas.</p>
+      <a href="{{ url_for('ventas_nueva') }}" class="btn-secondary">Registrar la primera venta</a>
+    </div>
+  {% else %}
+    <div class="card">
+      <table class="table">
+  <thead>
+    <tr>
+      <th>Folio</th>
+      <th>Cliente</th>
+      <th>Monto</th>
+      <th>Banco / Cuenta</th>
+      <th>Estado banco</th>
+      <th>Creada</th>
+      <th style="width: 160px;">Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for v in ventas %}
+    <tr>
+      <td>{{ v["folio"] }}</td>
+      <td>{{ v["cliente_nombre"] }}</td>
+      <td>${{ "%.2f"|format(v["monto"]) }}</td>
+      <td>{{ v["banco"] }} — {{ v["cuenta_alias"] }}</td>
+      <td>
+        <span class="badge badge-{{ v["estado_banco"]|lower }}">
+          {{ v["estado_banco"] }}
+        </span>
+      </td>
+      <td>{{ v["fecha_creacion"] }}</td>
+      <td>
+        <a href="{{ url_for('venta_detalle', venta_id=v['id']) }}" class="link-soft">Ver</a>
+
+        {% if v["estado_banco"] != "PAGADO" %}
+          |
+          <a href="{{ url_for('venta_editar', venta_id=v['id']) }}" class="link-soft">Editar</a>
+          |
+          <form method="post"
+                action="{{ url_for('venta_eliminar', venta_id=v['id']) }}"
+                style="display:inline;"
+                onsubmit="return confirm('¿Seguro que quieres eliminar esta venta?');">
+            <button type="submit" class="link-soft" style="border:none; background:none; padding:0; cursor:pointer;">
+              Eliminar
+            </button>
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

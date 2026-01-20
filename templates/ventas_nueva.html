@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva venta | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Nueva venta</h1>
+      <p class="page-subtitle">Registra una venta que se pagará por transferencia</p>
+    </div>
+    <a href="{{ url_for('ventas_listado') }}" class="btn-secondary small">Volver a mis ventas</a>
+  </header>
+
+  <div class="card">
+    {% if errors %}
+      <div class="alert-error">
+        <ul>
+          {% for e in errors %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="post" class="form-vertical">
+      <div class="form-group">
+        <label class="field-label" for="folio">Folio de venta</label>
+        <input class="field-input" type="text" id="folio" name="folio"
+               value="{{ folio or '' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="cliente_nombre">Nombre del cliente</label>
+        <input class="field-input" type="text" id="cliente_nombre" name="cliente_nombre"
+               value="{{ cliente_nombre or '' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="monto">Monto (MXN)</label>
+        <input class="field-input" type="number" step="0.01" min="0" id="monto" name="monto"
+               value="{{ monto or '' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="cuenta_bancaria_id">Cuenta destino (AZYCO)</label>
+        <select class="field-input" id="cuenta_bancaria_id" name="cuenta_bancaria_id" required>
+          <option value="">Selecciona una cuenta</option>
+          {% for c in cuentas %}
+            <option value="{{ c['id'] }}"
+              {% if cuenta_bancaria_id and cuenta_bancaria_id|string == c['id']|string %}selected{% endif %}>
+              {{ c["banco"] }} — {{ c["alias"] }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label" for="nota">Nota interna (opcional)</label>
+        <textarea class="field-input" id="nota" name="nota" rows="3">{{ nota or '' }}</textarea>
+      </div>
+
+      <button type="submit" class="btn-primary">Guardar venta</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Noemí | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Panel de Noemí</h1>
+      <p class="page-subtitle">
+        Subida de movimientos, revisión de pagos y conciliación.
+      </p>
+    </div>
+  </header>
+
+  <div class="cards-grid">
+    <div class="card big-card">
+      <h2>Subir movimientos bancarios</h2>
+      <p>Carga archivos BBVA, Banamex o Banorte para que el sistema detecte pagos nuevos.</p>
+      <a href="{{ url_for('pagos_subir') }}" class="btn-primary">Subir movimientos</a>
+    </div>
+
+    <div class="card">
+      <h2>Pagos detectados</h2>
+      <p>Revisa los pagos importados, su estado de conciliación y asocia manualmente cuando haga falta.</p>
+      <a href="{{ url_for('pagos_detectados_listado') }}" class="btn-secondary">Ver pagos detectados</a>
+    </div>
+
+    <div class="card">
+      <h2>Venta rápida</h2>
+      <p>Crea ventas agrupadas por cliente a partir de un Excel de antigüedad de saldos.</p>
+      <a href="{{ url_for('venta_rapida') }}" class="btn-secondary">Ir a venta rápida</a>
+    </div>
+
+
+
+    <div class="card">
+      <h2>Cierre diario</h2>
+      <p>Consulta las ventas del día, pagos conciliados y pendientes por revisar.</p>
+      <a href="{{ url_for('cierre_diario') }}" class="btn-secondary">Ver cierre diario</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

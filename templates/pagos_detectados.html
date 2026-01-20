@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Pagos detectados | AZYCO{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Pagos detectados</h1>
+      <p class="page-subtitle">
+        Movimientos importados desde banca electrónica. Filtra y revisa su estado de conciliación.
+      </p>
+    </div>
+    <a href="{{ url_for('pagos_subir') }}" class="btn-secondary small">
+      Subir movimientos
+    </a>
+  </header>
+
+  <div class="card" style="margin-bottom: 16px;">
+    <form method="get" class="form-vertical">
+      <div class="cards-grid">
+        <div class="form-group">
+          <label class="field-label" for="banco">Banco</label>
+          <select class="field-input" id="banco" name="banco">
+            <option value="">Todos</option>
+            <option value="BBVA" {% if filtro_banco == "BBVA" %}selected{% endif %}>BBVA</option>
+            <option value="BANAMEX" {% if filtro_banco == "BANAMEX" %}selected{% endif %}>Banamex</option>
+            <option value="BANORTE" {% if filtro_banco == "BANORTE" %}selected{% endif %}>Banorte</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label" for="estado">Estado conciliación</label>
+          <select class="field-input" id="estado" name="estado">
+            <option value="">Todos</option>
+            <option value="PENDIENTE" {% if filtro_estado == "PENDIENTE" %}selected{% endif %}>Pendiente</option>
+            <option value="MATCH" {% if filtro_estado == "MATCH" %}selected{% endif %}>Match</option>
+            <option value="REVISAR" {% if filtro_estado == "REVISAR" %}selected{% endif %}>Revisar</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label" for="fecha_desde">Fecha desde</label>
+          <input class="field-input" type="date" id="fecha_desde" name="fecha_desde" value="{{ filtro_fecha_desde }}">
+        </div>
+
+        <div class="form-group">
+          <label class="field-label" for="fecha_hasta">Fecha hasta</label>
+          <input class="field-input" type="date" id="fecha_hasta" name="fecha_hasta" value="{{ filtro_fecha_hasta }}">
+        </div>
+
+        <div class="form-group">
+          <label class="field-label" for="monto">Monto</label>
+          <input class="field-input" type="number" step="0.01" id="monto" name="monto" value="{{ filtro_monto }}">
+          <p class="hint">Filtra por monto exacto (con pequeña tolerancia de centavos).</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <button type="submit" class="btn-primary small">Aplicar filtros</button>
+        <a href="{{ url_for('pagos_detectados_listado') }}" class="btn-secondary small">Limpiar</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    {% if pagos|length == 0 %}
+      <p class="empty-state">No se encontraron pagos con los filtros seleccionados.</p>
+    {% else %}
+      <p class="hint">
+        Resultados: {{ pagos|length }} pago(s).
+      </p>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Banco</th>
+            <th>Cuenta</th>
+            <th>Referencia</th>
+            <th>Concepto</th>
+            <th>Estado</th>
+            <th>Venta</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in pagos %}
+          <tr>
+            <td>{{ p["fecha_operacion"] }}</td>
+            <td>${{ "%.2f"|format(p["monto"]) }}</td>
+            <td>{{ p["banco"] }}</td>
+            <td>{{ p["cuenta_alias"] or '-' }}</td>
+            <td>{{ p["referencia"] }}</td>
+            <td>{{ p["concepto"] }}</td>
+            <td>
+              <span class="badge badge-{{ p["estado_conciliacion"]|lower }}">
+                {{ p["estado_conciliacion"] }}
+              </span>
+            </td>
+            <td>
+              {% if p["venta_folio"] %}
+                {{ p["venta_folio"] }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('pago_detalle', pago_id=p['id']) }}" class="link-soft">
+                Ver
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
